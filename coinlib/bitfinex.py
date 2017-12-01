@@ -22,7 +22,7 @@ class BitfinexClient(object):
     return self._post_request(path, body)
 
   def wallets(self):
-    """Fetches active orders."""
+    """Fetches wallets."""
     path = 'v2/auth/r/wallets'
     body = {}
     return self._post_request(path, body)

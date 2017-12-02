@@ -50,7 +50,7 @@ class BitfinexClientTests(unittest.TestCase):
       200,
       "[['exchange', 'ETH', 10.0, 0, None], "
       "['exchange', 'BTC', 20.0, 0, None]]"))
-  def test_platform_status(self, session_mock):
+  def test_wallets(self, session_mock):
     client = bitfinex.BitfinexClient(auth=('key', 'secret'))
     self.assertEqual(
         "[['exchange', 'ETH', 10.0, 0, None], "

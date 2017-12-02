@@ -1,2 +1,9 @@
 # coinlib
-Python API for crypto exchanges
+Python3 API for crypto exchanges.
+
+## Requirements
+
+```shell
+# Install requests.
+pip3 install requests
+```

@@ -66,10 +66,11 @@ class BitfinexClientTests(unittest.TestCase):
     self.assertRaisesRegexp(requests.exceptions.HTTPError, '500 Server Error',
                             client.wallets)
 
-  @mock.patch.object(requests, 'Session', return_value=SessionMock(200, '[]'))
-  def test_active_orders(self, session_mock):
-    client = bitfinex.BitfinexClient(auth=('key', 'secret'))
-    self.assertEqual('[]', client.wallets())
+  @mock.patch.object(requests, 'Session', return_value=SessionMock(200, '[1]'))
+  def test_multiple_requests(self, session_mock):
+    with bitfinex.BitfinexClient(auth=('key', 'secret')) as client:
+      self.assertEqual('[1]', client.wallets())
+      self.assertEqual('[1]', client.active_orders())
 
 
 if __name__ == '__main__':

@@ -40,7 +40,7 @@ class BitfinexClient(object):
   def __enter__(self):
     return self
 
-  def __close__(self, *args):
+  def __exit__(self, *args):
     self._session.close()
 
   def platform_status(self):

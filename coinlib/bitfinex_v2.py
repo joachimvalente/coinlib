@@ -1,3 +1,8 @@
+"""An interface for the Bitfinex API v2.
+
+See https://docs.bitfinex.com/v2/docs
+"""
+
 import base64
 import hashlib
 import hmac

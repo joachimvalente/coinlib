@@ -29,7 +29,7 @@ def authenticated(func):
   return wrapper
 
 
-class BitfinexClient(object):
+class BitfinexV2Client(object):
 
   BASE_URL = 'https://api.bitfinex.com/'
 

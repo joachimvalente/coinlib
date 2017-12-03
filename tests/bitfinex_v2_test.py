@@ -3,7 +3,7 @@ from unittest import mock
 
 import requests
 
-from coinlib import bitfinex
+from coinlib import bitfinex_v2 as bitfinex
 
 
 class ResponseMock(requests.Response):

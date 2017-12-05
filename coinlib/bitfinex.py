@@ -1,6 +1,20 @@
 """A python interface for the Bitfinex API v1.
 
 See https://docs.bitfinex.com/v1/docs
+
+Usage:
+
+  from coinlib import bitfinex
+
+  with bitfinex.BitfinexClient() as client:
+    print(client.symbols())
+    print(client.stats('btcusd'))
+    ...
+
+  with bitfiex.BitfinexClient(API_KEY, API_SECRET) as client:
+    print(client.balances())
+    client.transfer(10.0, 'btc', wallet_from='exchange', wallet_to='trading')
+    ...
 """
 import base64
 import hashlib

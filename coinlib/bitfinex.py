@@ -24,8 +24,8 @@ Usage:
     print('Placed order ID {}'.format(order_id))
     ...
 """
-import collections
 import base64
+import collections
 import hashlib
 import hmac
 import json

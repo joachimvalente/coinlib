@@ -13,7 +13,7 @@ Usage:
     ...
 
   # Check balances.
-  with bitfiex.BitfinexClient(API_KEY, API_SECRET) as client:
+  with bitfinex.BitfinexClient(API_KEY, API_SECRET) as client:
     print(client.balances())
     client.transfer(10.0, 'btc', wallet_from='exchange', wallet_to='trading')
 

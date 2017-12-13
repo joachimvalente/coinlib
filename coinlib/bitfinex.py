@@ -6,14 +6,22 @@ Usage:
 
   from coinlib import bitfinex
 
+  # Print stats for bitcoin. Doesn't require authentication.
   with bitfinex.BitfinexClient() as client:
     print(client.symbols())
     print(client.stats('btcusd'))
     ...
 
+  # Check balances.
   with bitfiex.BitfinexClient(API_KEY, API_SECRET) as client:
     print(client.balances())
     client.transfer(10.0, 'btc', wallet_from='exchange', wallet_to='trading')
+
+    # Place a new buy order.
+    order = bitfinex.Order(symbol='btcusd', amount=10, price=1000, side='buy',
+                           order_type='exchange limit')
+    order_id = client.new_order(order)['id']
+    print('Placed order ID {}'.format(order_id))
     ...
 """
 import collections

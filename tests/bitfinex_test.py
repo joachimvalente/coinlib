@@ -88,6 +88,18 @@ class BitfinexClientTests(unittest.TestCase):
     self.assertRaisesRegex(requests.exceptions.HTTPError,
                            '400 Bad Request: Unknown symbol', client.ticker)
 
+  @mock.patch.object(requests, 'Session', return_value=SessionMock(
+      200, {
+          'id': 448364249,
+          'side': 'buy',
+          'avg_execution_price': 0,
+      }))
+  def test_new_order(self, session_mock):
+    client = bitfinex.BitfinexClient('key', 'secret')
+    order = bitfinex.Order(symbol='btcusd', amount=100, price=0.5, side='buy',
+                           order_type='exchange market')
+    self.assertEqual(448364249, client.new_order(order)['id'])
+
 
 if __name__ == '__main__':
   unittest.main()

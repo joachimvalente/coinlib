@@ -16,6 +16,7 @@ Usage:
     client.transfer(10.0, 'btc', wallet_from='exchange', wallet_to='trading')
     ...
 """
+import collections
 import base64
 import hashlib
 import hmac
@@ -27,6 +28,9 @@ import urllib
 import requests
 
 logger = logging.getLogger(__name__)
+
+Order = collections.namedtuple(
+    'Order', ['symbol', 'amount', 'price', 'side', 'order_type'])
 
 
 class NotAuthenticatedError(Exception):
@@ -41,11 +45,7 @@ class BitfinexClient(object):
   BASE_URL = 'https://api.bitfinex.com/v1'
 
   def __init__(self, api_key=None, api_secret=None):
-    """Constructs the client.
-
-    Args:
-      auth: A str or bytes tuple containing API key and API secret.
-    """
+    """Constructs the client."""
     if api_key and not api_secret:
       raise ValueError('Must provide API secret')
     if api_secret and not api_key:
@@ -213,14 +213,14 @@ class BitfinexClient(object):
     return self._post_request('/balances')
 
   def transfer(self, amount, currency, wallet_from, wallet_to):
-    """Transfer between wallets."""
+    """Transfers between wallets."""
     self._post_request(
         '/transfer',
         {'amount': amount, 'currency': currency, 'wallet_from': wallet_from,
          'wallet_to': wallet_to})
 
   def withdraw(self, withdraw_type, wallet, amount, **kwargs):
-    """Withdraw from a wallet."""
+    """Withdraws from a wallet."""
     payload = {
         'withdraw_type': withdraw_type,
         'walletselected': wallet,
@@ -228,5 +228,91 @@ class BitfinexClient(object):
     }
     payload.update(kwargs)
     self._post_request('/withdraw', payload)
+
+  ############################## ORDER ENDPOINTS ##############################
+
+  def new_order(self, order, is_hidden=False, is_postonly=False,
+                use_all_available=False, oco_order=False, buy_price_oco=0.0,
+                sell_price_oco=0.0):
+    """Place a new order."""
+    payload = {
+        'symbol': order.symbol,
+        'amount': order.amount,
+        'price': order.price,
+        'side': order.side,
+        'type': order.order_type,
+        'exchange': 'bitfinex',
+    }
+    if is_hidden:
+      payload['is_hidden'] = 1
+    if is_postonly:
+      payload['is_postonly'] = 1
+    if use_all_available:
+      payload['use_all_available'] = 1
+    if oco_order:
+      payload.update(oco_order=1,
+                     buy_price_oco=buy_price_oco,
+                     sell_price_oco=sell_price_oco)
+    return self._post_request('/order/new', payload)
+
+  def new_orders(self, orders):
+    """Place multiple new orders at once.
+
+    Args:
+      orders: A list of Order objects.
+    """
+    payload = {'orders': [{
+        'symbol': order.symbol,
+        'amount': order.amount,
+        'price': order.price,
+        'side': order.side,
+        'type': order.order_type,
+        'exchange': 'bitfinex',
+    } for order in orders]}
+    return self._post_request('/order/new/multi', payload)
+
+  def cancel_order(self, order_id):
+    """Cancel an order."""
+    return self._post_request('/order/cancel', {'order_id': order_id})
+
+  def cancel_orders(self, order_ids):
+    """Cancel multiple orders."""
+    return self._post_request('/order/cancel/multi', {'order_ids': order_ids})
+
+  def cancel_all_orders(self):
+    """Cancel all orders."""
+    return self._post_request('/order/cancel/all')
+
+  def replace_order(self, order_id, new_order, is_hidden=False,
+                    is_postonly=False, use_all_available=False):
+    """Replace an existing order with a new one."""
+    payload = {
+        'order_id': order_id,
+        'symbol': new_order.symbol,
+        'amount': new_order.amount,
+        'price': new_order.price,
+        'side': new_order.side,
+        'type': new_order.order_type,
+        'exchange': 'bitfinex',
+    }
+    if is_hidden:
+      payload['is_hidden'] = 1
+    if is_postonly:
+      payload['is_postonly'] = 1
+    if use_all_available:
+      payload['use_all_available'] = 1
+    return self._post_request('/order/cancel/replace', payload)
+
+  def order_status(self, order_id):
+    """Get status of an order."""
+    return self._post_request('/order/status', {'order_id': order_id})
+
+  def active_orders(self):
+    """Get the order status of all active orders."""
+    return self._post_request('/orders')
+
+  def order_history(self):
+    """Get the status of the latest inactive orders, limited to 3 days."""
+    return self._post_request('/orders/hist')
 
   ...  # to be continued

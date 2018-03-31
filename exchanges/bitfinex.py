@@ -143,6 +143,7 @@ class Bitfinex(exchange.Exchange):
     return self._post_request('/order/cancel', {'order_id': order_id})
 
   def _order_status(self, order_id):
+    # TODO: Return 'active', 'canceled' or 'executed'.
     return self._post_request('/order/status', {'order_id': order_id})
 
   def _active_orders(self):

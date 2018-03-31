@@ -44,7 +44,7 @@ class Exchange(ABC):
   def is_authenticated(self):
     return self._authenticated
 
-  ### Metadata.
+  ### Supported assets.
 
   @abstractmethod
   def assets(self):

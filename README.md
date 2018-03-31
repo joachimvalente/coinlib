@@ -4,7 +4,6 @@ Python3 API for crypto exchanges.
 ## Requirements
 
 ```shell
-# Install requests.
 pip install -r requirements.txt
 ```
 

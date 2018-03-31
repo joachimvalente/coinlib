@@ -313,7 +313,6 @@ class BitfinexClient(object):
 
   def order_status(self, order_id):
     """Get status of an order."""
-    # TODO: Return 'active', 'canceled' or 'executed'.
     return self._post_request('/order/status', {'order_id': order_id})
 
   def active_orders(self):

@@ -65,8 +65,8 @@ class Exchange(ABC):
     """Gets last ticker for given trading pair.
 
     Returns:
-      Dictionary with keys 'ask', 'bid', 'last', 'high', 'low', 'volume' and
-        'timestamp'.
+      Dictionary with keys 'ask', 'bid', 'last', 'high', 'low', 'volume'
+        (expressed in primary unit) and 'timestamp'.
     """
 
   @abstractmethod
@@ -75,7 +75,7 @@ class Exchange(ABC):
 
     Returns:
       List of dictionaries with keys 'quantity', 'price', 'side' (buy or sell)
-        and 'timestamp'.
+        and 'timestamp'. Sorted with most recent first.
     """
 
   ### Balance.
@@ -92,16 +92,16 @@ class Exchange(ABC):
 
   ### Orders.
 
-  def place_order(self, amount, asset, price, currency, side,
+  def place_order(self, primary, secondary, side, amount, price=None,
                   order_type='market'):
     """Places a new order.
 
     Args:
-      amount: Amount to buy or sell.
-      asset: Asset code, e.g. 'BTC'.
-      price: Order price.
-      currency: Currency, e.g. 'USD'.
+      primary: Primary, e.g. 'BTC'.
+      secondary: Secondary, e.g. 'USD'.
       side: 'buy' or 'sell'.
+      amount: Amount to buy or sell.
+      price: Price for one primary. Leave None for market orders.
       order_type: 'market', 'limit' or 'stop'.
 
     Returns:
@@ -111,10 +111,13 @@ class Exchange(ABC):
       raise AuthenticationError('Client not authenticated')
     if side not in ('buy', 'sell'):
       raise ValueError('`side` param must be "buy" or "sell"')
-    return self._place_order(amount, asset, price, currency, side, order_type)
+    if order_type == 'market' and price is not None:
+      raise ValueError('Do not provide price for market orders')
+    return self._place_order(
+        primary, secondary, side, amount, price, order_type)
 
   @abstractmethod
-  def _place_order(self, amount, asset, price, currency, side, order_type):
+  def _place_order(self, primary, secondary, side, amount, price, order_type):
     ...
 
   def cancel_order(self, order_id):
@@ -152,12 +155,12 @@ class Exchange(ABC):
   def _active_orders(self):
     ...
 
-  def past_orders(self, include_canceled=False):
+  def past_orders(self):
     """Gets the list of executed and optionally canceled order IDs."""
     if not self._authenticated:
       raise AuthenticationError('Client not authenticated')
     return self._past_orders(include_canceled)
 
   @abstractmethod
-  def _past_orders(self, include_canceled):
+  def _past_orders(self):
     ...

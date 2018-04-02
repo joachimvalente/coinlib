@@ -9,7 +9,7 @@ pip install -r requirements.txt
 
 ## Currently supported exchanges
 
-* Bitfinex (work in progress)
+* Bitfinex
 
 ## Usage
 
@@ -37,7 +37,11 @@ pip install -r requirements.txt
 >>> b.authenticate(API_KEY, API_SECRET)
 
 >>> b.balances()
-{'BTC': 3.0}
+{'BTC': 3.0, 'ETH': 10.0}
 
->>> b.place_order(0.01, 'BTC', 68.33, 'USD', 'buy')
+>>> b.place_order('BTC', 'ETH', 'buy', 0.1)  # market buy order of .1 BTC
+10151635975
+
+>>> b.order_status(10151635975)
+'executed'
 ```

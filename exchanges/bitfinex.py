@@ -50,6 +50,8 @@ class Bitfinex(exchange.Exchange):
       JSON-encoded response.
     """
     r = self._session.get(_BASE_URL + path, params=params or {})
+    if r.status_code == 400:
+      raise ValueError(r.json()['message'])
     r.raise_for_status()
     return r.json()
 
@@ -67,15 +69,30 @@ class Bitfinex(exchange.Exchange):
     payload.update(nonce=crypto.nonce(), request='/v1' + path)
     r = self._session.post(_BASE_URL + path, headers=self._sign(payload),
                            verify=True)
+    if r.status_code == 400:
+      raise ValueError(r.json()['message'])
     r.raise_for_status()
     return r.json()
 
   _SYMBOLS = None
+  _SYMBOL_DETAILS = None
 
   def _symbols(self):
     if self._SYMBOLS is None:
       self._SYMBOLS = self._get_request('/symbols')
     return self._SYMBOLS
+
+  def _symbol_details(self, primary, secondary):
+    if self._SYMBOL_DETAILS is None:
+      self._SYMBOL_DETAILS = {x['pair']: x
+                              for x in self._get_request('/symbols_details')}
+    return self._SYMBOL_DETAILS[self._make_symbol(primary, secondary)]
+
+  def _min_order_size(self, primary, secondary):
+    return float(self._symbol_details(primary, secondary)['minimum_order_size'])
+
+  def _max_order_size(self, primary, secondary):
+    return float(self._symbol_details(primary, secondary)['maximum_order_size'])
 
   def assets(self):
     return sorted(set(x[:3].upper() for x in self._symbols()))
@@ -124,32 +141,43 @@ class Bitfinex(exchange.Exchange):
     return {
         balance['currency'].upper(): float(balance['amount'])
         for balance in balances
-        if balance['type'] == 'exchange'
+        if balance['type'] == 'exchange' and float(balance['amount']) > 0
     }
 
-  def _place_order(self, amount, asset, price, currency, side, order_type):
-    symbol = self._make_symbol(asset, currency)
+  def _place_order(self, primary, secondary, side, amount, price, order_type):
+    symbol = self._make_symbol(primary, secondary)
+    min_order_size = self._min_order_size(primary, secondary)
+    max_order_size = self._max_order_size(primary, secondary)
+    if amount < min_order_size:
+      raise ValueError('Minimum order size is {}'.format(min_order_size))
+    if amount > max_order_size:
+      raise ValueError('Maximum order size is {}'.format(max_order_size))
     payload = {
         'symbol': symbol,
-        'amount': amount,
-        'price': price,
+        'amount': str(amount),
+        'price': str(price) if order_type != 'market' else '1.0',
         'side': side,
-        'type': order_type,
+        'type': 'exchange {}'.format(order_type),
         'exchange': 'bitfinex',
     }
-    return self._post_request('/order/new', payload)
+    return self._post_request('/order/new', payload)['id']
 
   def _cancel_order(self, order_id):
-    return self._post_request('/order/cancel', {'order_id': order_id})
+    self._post_request('/order/cancel', {'order_id': order_id})
 
   def _order_status(self, order_id):
     # TODO: Return 'active', 'canceled' or 'executed'.
-    return self._post_request('/order/status', {'order_id': order_id})
+    status = self._post_request('/order/status', {'order_id': order_id})
+    if status['is_live']:
+      return 'active'
+    if status['is_cancelled']:
+      return 'canceled'
+    return 'executed'
 
   def _active_orders(self):
     orders = self._post_request('/orders')
     return [order['id'] for order in orders]
 
-  def _past_orders(self, include_canceled):
+  def _past_orders(self):
     orders = self._post_request('/orders/hist')
     return [order['id'] for order in orders]

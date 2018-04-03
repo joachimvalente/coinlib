@@ -10,22 +10,23 @@ pip install -r requirements.txt
 ## Currently supported exchanges
 
 * Bitfinex
+* Bittrex
 
 ## Usage
 
 ```
 >>> from coinlib.exchanges import bitfinex
 
->>> b = bitfinex.Bitfinex()
+>>> b = bitfinex.Bitfinex()  # or bittrex.Bittrex()
 
 >>> b.pairs()
-[('AID', 'BTC'),
- ('AID', 'ETH'),
- ('AID', 'USD'),
+[('BTC', 'AID'),
+ ('BTC', 'AVT'),
+ ('BTC', 'BAT'),
  ...
- ('ZRX', 'USD')]
+ ('USD', 'ZRX')]
 
->>> b.ticker('BTC', 'USD')
+>>> b.ticker('USD', 'BTC')
 {'ask': 6833.0,
  'bid': 6832.9,
  'high': 7208.1,
@@ -39,9 +40,9 @@ pip install -r requirements.txt
 >>> b.balances()
 {'BTC': 3.0, 'ETH': 10.0}
 
->>> b.place_order('BTC', 'ETH', 'buy', 0.1)  # market buy order of .1 BTC
+>>> b.place_order('USD', 'BTC', 'buy', 0.1)  # market buy order of .1 BTC
 10151635975
 
->>> b.order_status(10151635975)
+>>> b.order_details(10151635975)['status']
 'executed'
 ```

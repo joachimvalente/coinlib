@@ -12,11 +12,10 @@ from coinlib.core import exchange
 _BASE_URL = 'https://api.bitfinex.com/v1'
 
 
-class AuthenticationError(Exception):
-  """Exception raised on Authentication errors."""
-
-
 class Bitfinex(exchange.Exchange):
+
+  def name(self):
+    return 'Bitfinex'
 
   def _sign(self, payload):
     """Signs a payload and returns authenticated HTTP headers.
@@ -51,7 +50,7 @@ class Bitfinex(exchange.Exchange):
     """
     r = self._session.get(_BASE_URL + path, params=params or {})
     if r.status_code == 400:
-      raise ValueError(r.json()['message'])
+      raise exchange.RequestFailedError(r.json()['message'])
     r.raise_for_status()
     return r.json()
 
@@ -94,18 +93,11 @@ class Bitfinex(exchange.Exchange):
   def _max_order_size(self, primary, secondary):
     return float(self._symbol_details(primary, secondary)['maximum_order_size'])
 
-  def assets(self):
-    return sorted(set(x[:3].upper() for x in self._symbols()))
-
-  def currencies(self):
-    return sorted(
-        set(x[3:].upper() for x in self._symbols()) - set(self.assets()))
-
   def pairs(self):
-    return sorted((x[:3].upper(), x[3:].upper()) for x in self._symbols())
+    return sorted((x[3:].upper(), x[:3].upper()) for x in self._symbols())
 
   def _make_symbol(self, primary, secondary):
-    symbol = '{}{}'.format(primary.lower(), secondary.lower())
+    symbol = '{}{}'.format(secondary.lower(), primary.lower())
     if symbol not in self._symbols():
       raise ValueError('Invalid pair {}/{}'.format(primary, secondary))
     return symbol
@@ -165,14 +157,27 @@ class Bitfinex(exchange.Exchange):
   def _cancel_order(self, order_id):
     self._post_request('/order/cancel', {'order_id': order_id})
 
-  def _order_status(self, order_id):
-    # TODO: Return 'active', 'canceled' or 'executed'.
-    status = self._post_request('/order/status', {'order_id': order_id})
-    if status['is_live']:
-      return 'active'
-    if status['is_cancelled']:
-      return 'canceled'
-    return 'executed'
+  def _order_details(self, order_id):
+    details = self._post_request('/order/status', {'order_id': order_id})
+    primary = details['symbol'][3:].upper()
+    secondary = details['symbol'][:3].upper()
+    if details['is_live']:
+      status = 'active'
+    elif details['is_cancelled']:
+      status = 'canceled'
+    else:
+      status = 'executed'
+    return {
+        'primary': primary,
+        'secondary': secondary,
+        'order_type': details['type'].replace('exchange ', ''),
+        'side': details['side'],
+        'quantity': float(details['original_amount']),
+        'remaining': float(details['remaining_amount']),
+        'price': float(details['price']),
+        'timestamp_opened': float(details['timestamp']),
+        'status': status,
+    }
 
   def _active_orders(self):
     orders = self._post_request('/orders')

@@ -8,6 +8,10 @@ class AuthenticationError(Exception):
   """Exception raised on authentication errors."""
 
 
+class RequestFailedError(Exception):
+  """Exception raised when API calls fail."""
+
+
 class Exchange(ABC):
 
   def __init__(self):
@@ -34,7 +38,7 @@ class Exchange(ABC):
     try:
       # Try checking balances to validate authentication.
       self._balances()
-    except requests.HTTPError:
+    except RequestFailedError:
       raise AuthenticationError('Invalid credentials')
     self._authenticated = True
 
@@ -44,15 +48,11 @@ class Exchange(ABC):
   def is_authenticated(self):
     return self._authenticated
 
+  @abstractmethod
+  def name(self):
+    """Returns the name of this exchange."""
+
   ### Supported assets.
-
-  @abstractmethod
-  def assets(self):
-    """Returns list of supported assets, e.g. ['BTC', 'ETH']."""
-
-  @abstractmethod
-  def currencies(self):
-    """Returns list of supported currencies, e.g. ['USD', 'EUR']."""
 
   @abstractmethod
   def pairs(self):
@@ -66,7 +66,7 @@ class Exchange(ABC):
 
     Returns:
       Dictionary with keys 'ask', 'bid', 'last', 'high', 'low', 'volume'
-        (expressed in primary unit) and 'timestamp'.
+        (expressed in secondary unit) and 'timestamp'.
     """
 
   @abstractmethod
@@ -97,11 +97,11 @@ class Exchange(ABC):
     """Places a new order.
 
     Args:
-      primary: Primary, e.g. 'BTC'.
-      secondary: Secondary, e.g. 'USD'.
+      primary: Primary, e.g. 'USD'.
+      secondary: Secondary, e.g. 'BTC'.
       side: 'buy' or 'sell'.
       amount: Amount to buy or sell.
-      price: Price for one primary. Leave None for market orders.
+      price: Price for one secondary. Leave None for market orders.
       order_type: 'market', 'limit' or 'stop'.
 
     Returns:
@@ -130,19 +130,20 @@ class Exchange(ABC):
   def _cancel_order(self, order_id):
     ...
 
-  def order_status(self, order_id):
-    """Checks order status.
+  def order_details(self, order_id):
+    """Checks order details.
 
     Returns:
-      Tuple (status, timestamp in seconds) where status is one of 'active',
-      'canceled' or 'executed'.
+      Dictionary with keys 'primary', 'secondary', 'order_type', 'side',
+        'quantity', 'remaining', 'price', 'timestamp_opened' and 'status' where
+        status is one of 'active', 'canceled' or 'executed'.
     """
     if not self._authenticated:
       raise AuthenticationError('Client not authenticated')
-    return self._order_status(order_id)
+    return self._order_details(order_id)
 
   @abstractmethod
-  def _order_status(self, order_id):
+  def _order_details(self, order_id):
     ...
 
   def active_orders(self):
@@ -159,7 +160,7 @@ class Exchange(ABC):
     """Gets the list of executed and optionally canceled order IDs."""
     if not self._authenticated:
       raise AuthenticationError('Client not authenticated')
-    return self._past_orders(include_canceled)
+    return self._past_orders()
 
   @abstractmethod
   def _past_orders(self):

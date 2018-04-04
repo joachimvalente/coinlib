@@ -15,9 +15,9 @@ pip install -r requirements.txt
 ## Usage
 
 ```
->>> from coinlib.exchanges import bitfinex
+>>> import coinlib
 
->>> b = bitfinex.Bitfinex()  # or bittrex.Bittrex()
+>>> b = coinlib.Bitfinex()  # or coinlib.Bittrex()
 
 >>> b.pairs()
 [('BTC', 'AID'),

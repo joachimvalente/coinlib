@@ -7,8 +7,8 @@ import urllib.parse
 
 import requests
 
-from coinlib.core import crypto
-from coinlib.core import exchange
+from coinlib.base import crypto
+from coinlib.base import exchange
 
 _BASE_URL = 'https://bittrex.com/api/v1.1'
 

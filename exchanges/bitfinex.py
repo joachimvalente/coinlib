@@ -6,8 +6,8 @@ import json
 
 import requests
 
-from coinlib.core import crypto
-from coinlib.core import exchange
+from coinlib.base import crypto
+from coinlib.base import exchange
 
 _BASE_URL = 'https://api.bitfinex.com/v1'
 
